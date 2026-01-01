@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Q&A System Tutorial - ChromaDB + Ollama + RAG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* Tooltip styles */
+        .tooltip { position: relative; cursor: help; }
+        .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 280px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            border: 1px solid #334155;
+        }
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: #1e293b;
+        }
+        .tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+            bottom: calc(100% + 10px);
+        }
+        
+        /* Code block styles */
+        .code-block {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .code-block code {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        /* Section transitions */
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Progress bar animation */
+        .progress-fill { transition: width 0.5s ease; }
+        
+        /* Diagram boxes */
+        .diagram-box {
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        /* Key term highlight */
+        .key-term {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+            border-bottom: 2px dotted #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg">Code Q&A System Tutorial</h1>
+                        <p class="text-xs text-gray-400">ChromaDB + Ollama + RAG</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-400">Section <span id="currentSection">1</span> of <span id="totalSections">12</span></span>
+                    <div class="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="progressBar" class="progress-fill h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full" style="width: 8.33%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-24">
+        <div class="max-w-4xl mx-auto px-4">
+            
+            <!-- ==================== SECTION 1: Welcome ==================== -->
+            <div id="section-1" class="section active">
+                <div class="text-center py-12">
+                    <div class="inline-flex items-center gap-2 bg-blue-500/10 text-blue-400 px-4 py-2 rounded-full text-sm mb-6">
+                        <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                        Interactive Tutorial
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        Build a Code Q&A System
+                    </h1>
+                    <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                        Learn how to create an AI-powered code assistant that understands your questions and generates code using your own examples.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-12">
+                        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold mb-2">ChromaDB</h3>
+                            <p class="text-sm text-gray-400">Vector database for storing code embeddings</p>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold mb-2">Ollama</h3>
+                            <p class="text-sm text-gray-400">Local AI for embeddings and code generation</p>
+                        </div>
+                        <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                            <div class="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                            <h3 class="font-semibold mb-2">RAG</h3>
+                            <p class="text-sm text-gray-400">Retrieval Augmented Generation technique</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-8 border border-gray-700">
+                        <h3 class="font-semibold text-lg mb-4">💡 What You'll Learn</h3>
+                        <div class="grid md:grid-cols-2 gap-3 text-left text-sm">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>How embeddings capture text meaning</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>How vector databases work</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Build a semantic code search system</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Use RAG for better AI responses</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 2: What Are We Building ==================== -->
+            <div id="section-2" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">What Are We Building?</h2>
+                    <p class="text-gray-400">Let's understand the big picture before diving into details.</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🎯</span> The Goal
+                    </h3>
+                    <p class="text-gray-300 mb-4">
+                        We're building a <span class="tooltip key-term">smart code assistant<span class="tooltip-content"><strong>Smart Code Assistant</strong><br><br>An AI system that understands natural language questions and generates relevant code based on examples from your own codebase.</span></span> that can:
+                    </p>
+                    <ol class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">1</span>
+                            <span><strong>Understand</strong> your questions in plain English</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">2</span>
+                            <span><strong>Find</strong> relevant code examples from a database</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">3</span>
+                            <span><strong>Generate</strong> new code based on those examples</span>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📚</span> The Smart Librarian Analogy
+                    </h3>
+                    <p class="text-gray-300 mb-4">Imagine you walk into a library and ask:</p>
+                    <div class="bg-gray-900/50 rounded-lg p-4 mb-4 border-l-4 border-blue-500">
+                        <p class="italic text-blue-300">"I need to build a website menu that works on phones"</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mt-6">
+                        <div class="bg-red-500/10 rounded-xl p-4 border border-red-500/30">
+                            <h4 class="font-semibold text-red-400 mb-2">❌ Regular Search</h4>
+                            <p class="text-sm text-gray-400">Looks for exact words: "website", "menu", "phones"</p>
+                            <p class="text-sm text-gray-500 mt-2">Misses relevant results!</p>
+                        </div>
+                        <div class="bg-green-500/10 rounded-xl p-4 border border-green-500/30">
+                            <h4 class="font-semibold text-green-400 mb-2">✅ Smart Librarian</h4>
+                            <p class="text-sm text-gray-400">Understands you mean: "responsive navbar", "mobile navigation", "hamburger menu"</p>
+                            <p class="text-sm text-gray-500 mt-2">Finds the right books!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span class="text-sm text-gray-400 ml-2">System Flow</span>
+                    </div>
+                    <div class="p-6 diagram-box text-green-400 overflow-x-auto">
+<pre>
+User Question: "Create a responsive navbar with dropdown"
+         │
+         ▼
+┌─────────────────┐     ┌──────────────────────────────────────────┐
+│ Embed Question  │────▶│ ChromaDB: Find similar code snippets     │
+└─────────────────┘     └──────────────────────────────────────────┘
+                                          │
+                                          ▼
+                        ┌──────────────────────────────────────────┐
+                        │ Retrieved Snippets:                      │
+                        │  • navbar-basic.html (0.89 similarity)   │
+                        │  • dropdown-menu.html (0.85 similarity)  │
+                        └──────────────────────────────────────────┘
+                                          │
+                                          ▼
+                        ┌──────────────────────────────────────────┐
+                        │ LLM generates NEW code using examples    │
+                        └──────────────────────────────────────────┘
+</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 3: Understanding Embeddings ==================== -->
+            <div id="section-3" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">What Are Embeddings?</h2>
+                    <p class="text-gray-400">The secret sauce that makes semantic search possible.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">💡 Simple Definition</h3>
+                    <p class="text-lg text-gray-300">
+                        An <span class="tooltip key-term">embedding<span class="tooltip-content"><strong>Embedding</strong><br><br>A list of numbers (typically 384-1024) that represents the meaning of text. Similar meanings produce similar numbers, enabling semantic search.</span></span> is a way to convert text into numbers that a computer can understand and compare.
+                    </p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🗺️</span> Analogy: GPS Coordinates for Words
+                    </h3>
+                    <p class="text-gray-300 mb-4">Think of embeddings like GPS coordinates, but for words:</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <h4 class="font-semibold text-blue-400 mb-3">Physical World</h4>
+                            <div class="space-y-2 text-sm font-mono">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">New York:</span>
+                                    <span class="text-green-400">(40.7, -74.0)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Los Angeles:</span>
+                                    <span class="text-green-400">(34.0, -118.2)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Paris:</span>
+                                    <span class="text-yellow-400">(48.8, 2.3)</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">NYC & LA are closer (both in USA)</p>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <h4 class="font-semibold text-purple-400 mb-3">Word World</h4>
+                            <div class="space-y-2 text-sm font-mono">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">"happy":</span>
+                                    <span class="text-green-400">(0.8, 0.6, 0.2...)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">"joyful":</span>
+                                    <span class="text-green-400">(0.79, 0.61, 0.19...)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">"sad":</span>
+                                    <span class="text-yellow-400">(-0.7, -0.5, 0.1...)</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">"happy" & "joyful" are closer (similar meaning)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 mb-8">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">How Embeddings Are Created</span>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
+                                <div class="flex-grow">
+                                    <p class="font-medium">Input Text</p>
+                                    <code class="text-sm text-green-400 bg-gray-900 px-2 py-1 rounded">"responsive navbar"</code>
+                                </div>
+                            </div>
+                            <div class="w-8 border-l-2 border-gray-600 h-6 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
+                                <div class="flex-grow">
+                                    <p class="font-medium">Tokenization</p>
+                                    <code class="text-sm text-yellow-400 bg-gray-900 px-2 py-1 rounded">["respon", "sive", "nav", "bar"]</code>
+                                </div>
+                            </div>
+                            <div class="w-8 border-l-2 border-gray-600 h-6 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm">3</div>
+                                <div class="flex-grow">
+                                    <p class="font-medium">Neural Network Processing</p>
+                                    <p class="text-sm text-gray-400">Millions of mathematical transformations</p>
+                                </div>
+                            </div>
+                            <div class="w-8 border-l-2 border-gray-600 h-6 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm">4</div>
+                                <div class="flex-grow">
+                                    <p class="font-medium">Output Vector</p>
+                                    <code class="text-sm text-green-400 bg-gray-900 px-2 py-1 rounded">[0.234, -0.567, 0.891, 0.123, ...]</code>
+                                    <p class="text-xs text-gray-500 mt-1">Typically 384 to 1024 numbers</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🎯</span> Why Embeddings Matter
+                    </h3>
+                    <div class="bg-gray-900/50 rounded-xl p-4 mb-4">
+                        <p class="font-medium text-red-400 mb-2">❌ Problem: Computers don't understand meaning</p>
+                        <div class="code-block p-3 text-sm">
+                            <code class="text-gray-300">
+# To a computer, these are completely different:<br>
+"car"<br>
+"automobile"<br>
+"vehicle"<br>
+<span class="text-gray-500"># But to humans, they're related!</span>
+                            </code>
+                        </div>
+                    </div>
+                    <div class="bg-gray-900/50 rounded-xl p-4">
+                        <p class="font-medium text-green-400 mb-2">✅ Solution: Embeddings capture meaning as numbers</p>
+                        <div class="code-block p-3 text-sm">
+                            <code class="text-gray-300">
+"car"        → [0.5, 0.3, 0.8, ...]<br>
+"automobile" → [0.51, 0.29, 0.81, ...]  <span class="text-green-400"># Very similar!</span><br>
+"banana"     → [-0.2, 0.9, 0.1, ...]    <span class="text-yellow-400"># Very different</span>
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 4: Cosine Similarity ==================== -->
+            <div id="section-4" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Measuring Similarity</h2>
+                    <p class="text-gray-400">How do we know if two embeddings are similar?</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📐</span> Cosine Similarity
+                    </h3>
+                    <p class="text-gray-300 mb-4">
+                        <span class="tooltip key-term">Cosine similarity<span class="tooltip-content"><strong>Cosine Similarity</strong><br><br>A measure of how similar two vectors are, based on the angle between them. Result: -1 (opposite) to +1 (identical). Used to compare embeddings.</span></span> measures how similar two vectors are by looking at the angle between them.
+                    </p>
+                    
+                    <div class="bg-gray-900/50 rounded-xl p-6 text-center mb-4">
+                        <p class="text-sm text-gray-400 mb-2">The Formula (Simplified)</p>
+                        <p class="text-xl font-mono text-blue-400">
+                            Similarity = How much do two arrows point the same way?
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+                            <p class="text-2xl font-bold text-green-400">+1</p>
+                            <p class="text-xs text-gray-400">Identical meaning</p>
+                        </div>
+                        <div class="bg-gray-500/10 rounded-lg p-3 border border-gray-500/30">
+                            <p class="text-2xl font-bold text-gray-400">0</p>
+                            <p class="text-xs text-gray-400">Unrelated</p>
+                        </div>
+                        <div class="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
+                            <p class="text-2xl font-bold text-red-400">-1</p>
+                            <p class="text-xs text-gray-400">Opposite meaning</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 mb-8">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">Visual Representation</span>
+                    </div>
+                    <div class="p-6 diagram-box text-center">
+                        <pre class="text-green-400 inline-block text-left">
+                    "happy"
+                      ↗
+                    /
+                   /
+                  /     "joyful" <span class="text-blue-400">(very close! ~0.95)</span>
+                 /      ↗
+                /     /
+               /    /
+    ─────────●────────────→ "neutral"
+              \
+               \
+                \
+                 ↘
+                  "sad" <span class="text-yellow-400">(opposite direction ~-0.8)</span>
+                        </pre>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700">
+                    <h3 class="font-semibold text-lg mb-4">🔍 Practical Example for Code</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+                            <span class="text-gray-300">Search for: <span class="text-blue-400 font-mono">"navbar"</span></span>
+                            <span class="text-gray-500">→</span>
+                        </div>
+                        <div class="grid gap-2 pl-4">
+                            <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+                                <span class="text-gray-300 font-mono">"navigation bar"</span>
+                                <span class="text-green-400 font-mono">0.92</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+                                <span class="text-gray-300 font-mono">"menu header"</span>
+                                <span class="text-green-400 font-mono">0.87</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+                                <span class="text-gray-300 font-mono">"top links"</span>
+                                <span class="text-yellow-400 font-mono">0.78</span>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
+                                <span class="text-gray-300 font-mono">"database query"</span>
+                                <span class="text-red-400 font-mono">0.12</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-4">
+                        Even though "navbar" doesn't appear in "navigation bar" or "menu header", the embeddings are similar because they have related meanings!
+                    </p>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 5: ChromaDB ==================== -->
+            <div id="section-5" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">What is ChromaDB?</h2>
+                    <p class="text-gray-400">A database designed specifically for storing and searching embeddings.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">💡 Simple Definition</h3>
+                    <p class="text-lg text-gray-300">
+                        <span class="tooltip key-term">ChromaDB<span class="tooltip-content"><strong>ChromaDB</strong><br><br>An open-source vector database that stores embeddings and enables fast similarity search. Think of it as a "smart filing cabinet" for AI data.</span></span> is a <span class="tooltip key-term">vector database<span class="tooltip-content"><strong>Vector Database</strong><br><br>A specialized database designed to store, index, and query high-dimensional vectors (embeddings). Optimized for similarity search rather than exact matching.</span></span> - a special database designed to store and search embeddings efficiently.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-red-500/30">
+                        <h4 class="font-semibold text-red-400 mb-4">Regular Database (MySQL)</h4>
+                        <div class="code-block p-4 text-sm mb-4">
+                            <code class="text-gray-300">
+<span class="text-blue-400">SELECT</span> * <span class="text-blue-400">FROM</span> snippets<br>
+<span class="text-blue-400">WHERE</span> text = <span class="text-green-400">'navbar'</span>
+                            </code>
+                        </div>
+                        <p class="text-sm text-gray-400">
+                            ❌ Only finds <strong>exact matches</strong><br>
+                            ❌ Misses "navigation", "menu", "header"
+                        </p>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-green-500/30">
+                        <h4 class="font-semibold text-green-400 mb-4">Vector Database (ChromaDB)</h4>
+                        <div class="code-block p-4 text-sm mb-4">
+                            <code class="text-gray-300">
+collection.<span class="text-yellow-400">query</span>(<br>
+&nbsp;&nbsp;query_texts=[<span class="text-green-400">"navbar"</span>],<br>
+&nbsp;&nbsp;n_results=<span class="text-purple-400">3</span><br>
+)
+                            </code>
+                        </div>
+                        <p class="text-sm text-gray-400">
+                            ✅ Finds <strong>similar meanings</strong><br>
+                            ✅ Returns "navigation", "menu", "header"
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📦</span> ChromaDB Key Concepts
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-sm font-mono">Collection</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-300">Like a table in a regular database</span>
+                            </div>
+                            <code class="text-sm text-green-400 bg-gray-900 px-3 py-1 rounded block">collection = client.create_collection("code_snippets")</code>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-mono">Documents</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-300">The actual text/code you store</span>
+                            </div>
+                            <code class="text-sm text-green-400 bg-gray-900 px-3 py-1 rounded block">documents = ["&lt;nav&gt;...&lt;/nav&gt;", "&lt;form&gt;...&lt;/form&gt;"]</code>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-sm font-mono">Embeddings</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-300">The number arrays for searching</span>
+                            </div>
+                            <code class="text-sm text-green-400 bg-gray-900 px-3 py-1 rounded block">embeddings = [[0.5, 0.3, ...], [0.2, 0.7, ...]]</code>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-sm font-mono">Metadata</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-300">Extra info about each document</span>
+                            </div>
+                            <code class="text-sm text-green-400 bg-gray-900 px-3 py-1 rounded block">metadatas = [{"category": "navigation"}, {"category": "forms"}]</code>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-sm font-mono">IDs</span>
+                                <span class="text-gray-500">→</span>
+                                <span class="text-gray-300">Unique identifiers</span>
+                            </div>
+                            <code class="text-sm text-green-400 bg-gray-900 px-3 py-1 rounded block">ids = ["navbar_001", "form_001"]</code>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span class="text-sm text-gray-400">Complete ChromaDB Example</span>
+                    </div>
+                    <div class="p-4 code-block">
+                        <pre class="text-sm"><code><span class="text-blue-400">import</span> chromadb
+
+<span class="text-gray-500"># STEP 1: Create a client (connection)</span>
+client = chromadb.<span class="text-yellow-400">Client</span>()
+
+<span class="text-gray-500"># STEP 2: Create a collection (like a table)</span>
+collection = client.<span class="text-yellow-400">create_collection</span>(<span class="text-green-400">"code_snippets"</span>)
+
+<span class="text-gray-500"># STEP 3: Add documents</span>
+collection.<span class="text-yellow-400">add</span>(
+    ids=[<span class="text-green-400">"navbar_001"</span>, <span class="text-green-400">"form_001"</span>],
+    documents=[<span class="text-green-400">"&lt;nav&gt;Navbar code&lt;/nav&gt;"</span>, <span class="text-green-400">"&lt;form&gt;Form code&lt;/form&gt;"</span>],
+    metadatas=[
+        {<span class="text-green-400">"category"</span>: <span class="text-green-400">"navigation"</span>},
+        {<span class="text-green-400">"category"</span>: <span class="text-green-400">"forms"</span>}
+    ]
+)
+
+<span class="text-gray-500"># STEP 4: Query (search)</span>
+results = collection.<span class="text-yellow-400">query</span>(
+    query_texts=[<span class="text-green-400">"I need a menu"</span>],
+    n_results=<span class="text-purple-400">2</span>
+)
+
+<span class="text-blue-400">print</span>(results[<span class="text-green-400">'documents'</span>])
+<span class="text-gray-500"># Output: [['&lt;nav&gt;Navbar code&lt;/nav&gt;']]</span></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 6: Ollama ==================== -->
+            <div id="section-6" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">What is Ollama?</h2>
+                    <p class="text-gray-400">Run AI models locally on your own computer.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">💡 Simple Definition</h3>
+                    <p class="text-lg text-gray-300">
+                        <span class="tooltip key-term">Ollama<span class="tooltip-content"><strong>Ollama</strong><br><br>A tool that lets you run Large Language Models (LLMs) locally on your computer. No internet required, no API fees, full privacy.</span></span> is a tool that lets you run <span class="tooltip key-term">Large Language Models<span class="tooltip-content"><strong>Large Language Model (LLM)</strong><br><br>An AI model trained on vast amounts of text that can understand and generate human-like text. Examples: GPT, Claude, Llama, CodeLlama.</span></span> on your own computer - no internet or API fees required!
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-red-500/30">
+                        <h4 class="font-semibold text-red-400 mb-4">❌ Without Ollama</h4>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-center gap-2">
+                                <span class="text-red-400">✗</span>
+                                Pay per API call
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-red-400">✗</span>
+                                Need internet connection
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-red-400">✗</span>
+                                Data sent to cloud
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-red-400">✗</span>
+                                Limited control
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-green-500/30">
+                        <h4 class="font-semibold text-green-400 mb-4">✅ With Ollama</h4>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-center gap-2">
+                                <span class="text-green-400">✓</span>
+                                Free (runs locally)
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-green-400">✓</span>
+                                Works offline
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-green-400">✓</span>
+                                Data stays private
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <span class="text-green-400">✓</span>
+                                Full control
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🔧</span> Ollama Does Two Things For Us
+                    </h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <h4 class="font-semibold text-blue-400 mb-3">1. Generate Embeddings</h4>
+                            <p class="text-sm text-gray-400 mb-3">Convert text to numbers (vectors)</p>
+                            <div class="code-block p-3 text-sm">
+                                <code class="text-gray-300">
+response = ollama.<span class="text-yellow-400">embeddings</span>(<br>
+&nbsp;&nbsp;model=<span class="text-green-400">'nomic-embed-text'</span>,<br>
+&nbsp;&nbsp;prompt=<span class="text-green-400">'navbar'</span><br>
+)<br>
+<span class="text-gray-500"># Returns: [0.234, -0.567, ...]</span>
+                                </code>
+                            </div>
+                        </div>
+                        <div class="bg-gray-900/50 rounded-xl p-4">
+                            <h4 class="font-semibold text-purple-400 mb-3">2. Generate Code</h4>
+                            <p class="text-sm text-gray-400 mb-3">Create new content from prompts</p>
+                            <div class="code-block p-3 text-sm">
+                                <code class="text-gray-300">
+response = ollama.<span class="text-yellow-400">chat</span>(<br>
+&nbsp;&nbsp;model=<span class="text-green-400">'codellama'</span>,<br>
+&nbsp;&nbsp;messages=[{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">'role'</span>: <span class="text-green-400">'user'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">'content'</span>: <span class="text-green-400">'Write navbar'</span><br>
+&nbsp;&nbsp;}]<br>
+)
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📦</span> Models We Use
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="text-left py-3 text-gray-400">Model</th>
+                                    <th class="text-left py-3 text-gray-400">Purpose</th>
+                                    <th class="text-left py-3 text-gray-400">Size</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-700/50">
+                                <tr>
+                                    <td class="py-3 font-mono text-blue-400">nomic-embed-text</td>
+                                    <td class="py-3 text-gray-300">Creating embeddings</td>
+                                    <td class="py-3 text-gray-500">~275MB</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 font-mono text-purple-400">codellama</td>
+                                    <td class="py-3 text-gray-300">Generating code</td>
+                                    <td class="py-3 text-gray-500">~4GB</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 7: What is RAG ==================== -->
+            <div id="section-7" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-blue-400 font-medium">Part 1: Understanding the Basics</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">What is RAG?</h2>
+                    <p class="text-gray-400">The technique that makes AI responses more accurate and relevant.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">💡 RAG = Retrieval Augmented Generation</h3>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="text-2xl">🔍</span>
+                            </div>
+                            <p class="font-semibold text-blue-400">Retrieval</p>
+                            <p class="text-xs text-gray-400">Finding relevant information</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="text-2xl">➕</span>
+                            </div>
+                            <p class="font-semibold text-purple-400">Augmented</p>
+                            <p class="text-xs text-gray-400">Adding info to enhance</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                <span class="text-2xl">✨</span>
+                            </div>
+                            <p class="font-semibold text-pink-400">Generation</p>
+                            <p class="text-xs text-gray-400">Creating new content</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-red-500/30">
+                        <h4 class="font-semibold text-red-400 mb-4">❌ Regular LLM Problem</h4>
+                        <div class="bg-gray-900/50 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-400 mb-2">You ask:</p>
+                            <p class="text-blue-300 italic">"Write code for our company's navbar"</p>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-0.5">✗</span>
+                                <span>Writes generic navbar</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-0.5">✗</span>
+                                <span>Doesn't know your coding style</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-0.5">✗</span>
+                                <span>Might use wrong CSS framework</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-red-400 mt-0.5">✗</span>
+                                <span>Could "hallucinate" patterns</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-green-500/30">
+                        <h4 class="font-semibold text-green-400 mb-4">✅ With RAG</h4>
+                        <div class="bg-gray-900/50 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-400 mb-2">System does:</p>
+                            <p class="text-green-300">1. Search your code database<br>2. Find existing navbar examples<br>3. Show examples to LLM</p>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-400 mt-0.5">✓</span>
+                                <span>Writes navbar matching YOUR style</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-400 mt-0.5">✓</span>
+                                <span>Uses YOUR CSS framework</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-400 mt-0.5">✓</span>
+                                <span>Follows YOUR patterns</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-green-400 mt-0.5">✓</span>
+                                <span>Grounded in real examples</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">RAG Pipeline Visualization</span>
+                    </div>
+                    <div class="p-6 diagram-box text-green-400 overflow-x-auto">
+<pre>
+STEP 1: User asks question
+────────────────────────────
+"Create a responsive navbar with dropdown"
+                │
+                ▼
+STEP 2: Convert to embedding
+────────────────────────────
+[0.5, 0.3, 0.8, 0.2, ...]
+                │
+                ▼
+STEP 3: Search ChromaDB
+────────────────────────────
+Find documents with similar embeddings
+                │
+                ▼
+┌─────────────────────────────────────┐
+│ Results:                            │
+│  • navbar_basic.html (91% similar)  │
+│  • dropdown_menu.html (87% similar) │
+└─────────────────────────────────────┘
+                │
+                ▼
+STEP 4: Build augmented prompt
+────────────────────────────────
+┌─────────────────────────────────────────────────────┐
+│ "Here are examples from our codebase:               │
+│                                                     │
+│ Example 1: &lt;nav class="bg-gray-800"&gt;...            │
+│ Example 2: &lt;div class="dropdown"&gt;...               │
+│                                                     │
+│ Now create a responsive navbar with dropdown"       │
+└─────────────────────────────────────────────────────┘
+                │
+                ▼
+STEP 5: LLM generates code
+────────────────────────────
+New code following YOUR patterns!
+</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Continue with more sections... -->
+            <!-- Sections 8-12 will be added in the JavaScript as dynamic content -->
+
+            <!-- ==================== SECTION 8: Project Structure ==================== -->
+            <div id="section-8" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-purple-400 font-medium">Part 2: Understanding the Code</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Project Structure</h2>
+                    <p class="text-gray-400">How the files are organized and what each one does.</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 mb-8">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">📁 Project Files</span>
+                    </div>
+                    <div class="p-6 font-mono text-sm">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 text-yellow-400">
+                                <span>📁</span> code_qa_system/
+                            </div>
+                            <div class="ml-6 space-y-1">
+                                <div class="flex items-center gap-2 text-blue-400">
+                                    <span>📁</span> snippets/
+                                    <span class="text-gray-500 text-xs">← Code examples stored here</span>
+                                </div>
+                                <div class="ml-6 space-y-1">
+                                    <div class="flex items-center gap-2 text-green-400">
+                                        <span>📄</span> tailwind_components.json
+                                        <span class="text-gray-500 text-xs">← HTML/Tailwind code</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-green-400">
+                                        <span>📄</span> yacc_lex_templates.json
+                                        <span class="text-gray-500 text-xs">← Parser/Lexer code</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 text-purple-400">
+                                    <span>🐍</span> build_db.py
+                                    <span class="text-gray-500 text-xs">← Creates the database</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-purple-400">
+                                    <span>🐍</span> code_qa.py
+                                    <span class="text-gray-500 text-xs">← Main Q&A application</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-400">
+                                    <span>📄</span> requirements.txt
+                                    <span class="text-gray-500 text-xs">← Python dependencies</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-orange-400">
+                                    <span>📁</span> chroma_db/
+                                    <span class="text-gray-500 text-xs">← Database storage (auto-created)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h4 class="font-semibold text-blue-400 mb-3 flex items-center gap-2">
+                            <span class="text-xl">📄</span> snippets/*.json
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-3">Your code examples library</p>
+                        <ul class="text-sm space-y-1 text-gray-300">
+                            <li>• Store code snippets with keywords</li>
+                            <li>• Organized by category</li>
+                            <li>• Edit anytime to add more</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h4 class="font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                            <span class="text-xl">🐍</span> build_db.py
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-3">Database builder script</p>
+                        <ul class="text-sm space-y-1 text-gray-300">
+                            <li>• Reads JSON snippet files</li>
+                            <li>• Creates embeddings via Ollama</li>
+                            <li>• Stores in ChromaDB</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h4 class="font-semibold text-pink-400 mb-3 flex items-center gap-2">
+                            <span class="text-xl">🐍</span> code_qa.py
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-3">Main application</p>
+                        <ul class="text-sm space-y-1 text-gray-300">
+                            <li>• Takes your questions</li>
+                            <li>• Searches for similar snippets</li>
+                            <li>• Generates new code</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h4 class="font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                            <span class="text-xl">📁</span> chroma_db/
+                        </h4>
+                        <p class="text-sm text-gray-400 mb-3">Persistent storage</p>
+                        <ul class="text-sm space-y-1 text-gray-300">
+                            <li>• Created automatically</li>
+                            <li>• Stores all embeddings</li>
+                            <li>• Survives restarts</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mt-8">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🔄</span> Data Flow
+                    </h3>
+                    <div class="flex flex-wrap items-center justify-center gap-2 text-sm">
+                        <div class="bg-gray-800 px-4 py-2 rounded-lg">JSON Snippets</div>
+                        <span class="text-gray-500">→</span>
+                        <div class="bg-gray-800 px-4 py-2 rounded-lg">build_db.py</div>
+                        <span class="text-gray-500">→</span>
+                        <div class="bg-gray-800 px-4 py-2 rounded-lg">ChromaDB</div>
+                        <span class="text-gray-500">→</span>
+                        <div class="bg-gray-800 px-4 py-2 rounded-lg">code_qa.py</div>
+                        <span class="text-gray-500">→</span>
+                        <div class="bg-green-500/20 text-green-400 px-4 py-2 rounded-lg">Generated Code!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 9: Snippet Structure ==================== -->
+            <div id="section-9" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-purple-400 font-medium">Part 2: Understanding the Code</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Snippet Structure</h2>
+                    <p class="text-gray-400">How code snippets are organized in JSON files.</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 mb-8">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700">
+                        <span class="text-sm text-gray-400">Complete Snippet Example</span>
+                    </div>
+                    <div class="p-4 code-block overflow-x-auto">
+                        <pre class="text-sm"><code>{
+  <span class="text-blue-400">"id"</span>: <span class="text-green-400">"tw_navbar_basic"</span>,           <span class="text-gray-500">← Unique identifier</span>
+  <span class="text-blue-400">"category"</span>: <span class="text-green-400">"tailwind"</span>,            <span class="text-gray-500">← Main group</span>
+  <span class="text-blue-400">"subcategory"</span>: <span class="text-green-400">"navigation"</span>,       <span class="text-gray-500">← Sub group</span>
+  <span class="text-blue-400">"keywords"</span>: [                        <span class="text-gray-500">← Search terms ⭐</span>
+    <span class="text-green-400">"navbar"</span>, <span class="text-green-400">"navigation"</span>, <span class="text-green-400">"header"</span>, <span class="text-green-400">"menu"</span>
+  ],
+  <span class="text-blue-400">"description"</span>: <span class="text-green-400">"Responsive navigation bar"</span>,
+  <span class="text-blue-400">"search_text"</span>: <span class="text-green-400">"navbar navigation header menu responsive mobile"</span>, <span class="text-gray-500">← Gets embedded! ⭐</span>
+  <span class="text-blue-400">"language"</span>: <span class="text-green-400">"html"</span>,
+  <span class="text-blue-400">"dependencies"</span>: [<span class="text-green-400">"tailwindcss"</span>],
+  <span class="text-blue-400">"difficulty"</span>: <span class="text-green-400">"beginner"</span>,
+  <span class="text-blue-400">"code"</span>: <span class="text-green-400">"&lt;nav class=\"bg-gray-800\"&gt;...&lt;/nav&gt;"</span>  <span class="text-gray-500">← The actual code</span>
+}</code></pre>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="space-y-4">
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-mono">id</span>
+                                <span class="text-xs text-gray-500">Unique Identifier</span>
+                            </div>
+                            <p class="text-sm text-gray-400">Naming: <code class="text-green-400">category_component_variant</code></p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-mono">keywords</span>
+                                <span class="text-xs text-gray-500">⭐ Critical for Search</span>
+                            </div>
+                            <p class="text-sm text-gray-400">Include synonyms: "navbar", "navigation", "menu"</p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 bg-pink-500/20 text-pink-400 rounded text-xs font-mono">search_text</span>
+                                <span class="text-xs text-gray-500">⭐ This Gets Embedded</span>
+                            </div>
+                            <p class="text-sm text-gray-400">Combine: keywords + description + related terms</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-2xl p-6 border border-yellow-500/30">
+                        <h4 class="font-semibold text-yellow-400 mb-4 flex items-center gap-2">
+                            <span class="text-xl">💡</span> Why Keywords Matter
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="bg-gray-900/50 rounded-lg p-3">
+                                <p class="text-red-400 mb-1">❌ Embedding the code:</p>
+                                <p class="text-gray-400 font-mono text-xs">"&lt;nav class=bg-gray-800&gt;"</p>
+                                <p class="text-gray-500 text-xs mt-1">Won't match "create a menu"!</p>
+                            </div>
+                            <div class="bg-gray-900/50 rounded-lg p-3">
+                                <p class="text-green-400 mb-1">✅ Embedding keywords:</p>
+                                <p class="text-gray-400 font-mono text-xs">"navbar menu navigation header"</p>
+                                <p class="text-gray-500 text-xs mt-1">WILL match "create a menu"!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                    <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <span class="text-2xl">📝</span> Creating Good search_text
+                    </h3>
+                    <div class="bg-gray-900/50 rounded-xl p-4 font-mono text-sm overflow-x-auto">
+                        <p class="text-gray-400 mb-2">// Formula:</p>
+                        <p class="text-blue-400">search_text = keywords + description_words + synonyms + related_terms</p>
+                        <p class="text-gray-400 mt-4 mb-2">// Example:</p>
+                        <p class="text-green-400">"navbar menu navigation header responsive mobile hamburger top bar links logo brand nav"</p>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-4">
+                        <strong>Think:</strong> "What would someone type to find this code?"
+                    </p>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 10: Build DB Code ==================== -->
+            <div id="section-10" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-purple-400 font-medium">Part 2: Understanding the Code</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Understanding build_db.py</h2>
+                    <p class="text-gray-400">The script that creates your searchable code database.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">🔄 What This Script Does</h3>
+                    <div class="flex flex-wrap items-center justify-center gap-4 text-sm">
+                        <div class="bg-gray-800 px-4 py-3 rounded-xl text-center">
+                            <p class="text-2xl mb-1">1️⃣</p>
+                            <p class="text-gray-300">Load JSON files</p>
+                        </div>
+                        <span class="text-gray-500 text-2xl">→</span>
+                        <div class="bg-gray-800 px-4 py-3 rounded-xl text-center">
+                            <p class="text-2xl mb-1">2️⃣</p>
+                            <p class="text-gray-300">Create embeddings</p>
+                        </div>
+                        <span class="text-gray-500 text-2xl">→</span>
+                        <div class="bg-gray-800 px-4 py-3 rounded-xl text-center">
+                            <p class="text-2xl mb-1">3️⃣</p>
+                            <p class="text-gray-300">Store in ChromaDB</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Step 1 -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-blue-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-blue-400 font-medium">Step 1: Configuration</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-gray-500"># Which AI model creates embeddings?</span>
+EMBEDDING_MODEL = <span class="text-green-400">"nomic-embed-text"</span>
+
+<span class="text-gray-500"># Where to save the database?</span>
+CHROMA_PERSIST_DIR = <span class="text-green-400">"./chroma_db"</span>
+
+<span class="text-gray-500"># Collection name (like a table name)</span>
+COLLECTION_NAME = <span class="text-green-400">"code_snippets"</span>
+
+<span class="text-gray-500"># Where are snippet files?</span>
+SNIPPETS_DIR = <span class="text-green-400">"./snippets"</span></code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-purple-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-purple-400 font-medium">Step 2: Load Snippets</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">load_snippets_from_file</span>(file_path):
+    <span class="text-gray-500">"""Load all snippets from one JSON file."""</span>
+    
+    <span class="text-gray-500"># Open and read the JSON file</span>
+    <span class="text-blue-400">with</span> <span class="text-yellow-400">open</span>(file_path, <span class="text-green-400">'r'</span>) <span class="text-blue-400">as</span> f:
+        data = json.<span class="text-yellow-400">load</span>(f)
+    
+    snippets = []
+    
+    <span class="text-gray-500"># Loop through each snippet</span>
+    <span class="text-blue-400">for</span> item <span class="text-blue-400">in</span> data[<span class="text-green-400">'snippets'</span>]:
+        snippet = CodeSnippet(
+            id=item[<span class="text-green-400">'id'</span>],
+            keywords=item[<span class="text-green-400">'keywords'</span>],
+            search_text=item[<span class="text-green-400">'search_text'</span>],
+            code=item[<span class="text-green-400">'code'</span>],
+            <span class="text-gray-500"># ... other fields</span>
+        )
+        snippets.<span class="text-yellow-400">append</span>(snippet)
+    
+    <span class="text-blue-400">return</span> snippets</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3 -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-pink-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-pink-400 font-medium">Step 3: Create Embedding</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">create_search_embedding</span>(snippet):
+    <span class="text-gray-500">"""Convert search_text to numbers."""</span>
+    
+    <span class="text-gray-500"># Combine all searchable text</span>
+    search_content = <span class="text-green-400">f"""
+    </span>{<span class="text-green-400">' '</span>.<span class="text-yellow-400">join</span>(snippet.keywords)}
+    {snippet.description}
+    {snippet.search_text}
+    <span class="text-green-400">"""</span>
+    
+    <span class="text-gray-500"># Call Ollama to create embedding</span>
+    response = ollama.<span class="text-yellow-400">embeddings</span>(
+        model=EMBEDDING_MODEL,
+        prompt=search_content
+    )
+    
+    <span class="text-gray-500"># Returns: [0.234, -0.567, 0.891, ...]</span>
+    <span class="text-blue-400">return</span> response[<span class="text-green-400">'embedding'</span>]</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4 -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-green-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-green-400 font-medium">Step 4: Store in ChromaDB</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">store_in_chromadb</span>(snippets, embeddings):
+    <span class="text-gray-500">"""Store everything in ChromaDB."""</span>
+    
+    <span class="text-gray-500"># Create client with persistent storage</span>
+    client = chromadb.<span class="text-yellow-400">PersistentClient</span>(path=CHROMA_PERSIST_DIR)
+    
+    <span class="text-gray-500"># Create collection with cosine similarity</span>
+    collection = client.<span class="text-yellow-400">create_collection</span>(
+        name=COLLECTION_NAME,
+        metadata={<span class="text-green-400">"hnsw:space"</span>: <span class="text-green-400">"cosine"</span>}
+    )
+    
+    <span class="text-gray-500"># Add all snippets</span>
+    collection.<span class="text-yellow-400">add</span>(
+        ids=[s.id <span class="text-blue-400">for</span> s <span class="text-blue-400">in</span> snippets],
+        embeddings=embeddings,
+        documents=[s.code <span class="text-blue-400">for</span> s <span class="text-blue-400">in</span> snippets],  <span class="text-gray-500"># Store CODE!</span>
+        metadatas=[{<span class="text-green-400">"category"</span>: s.category} <span class="text-blue-400">for</span> s <span class="text-blue-400">in</span> snippets]
+    )
+    
+    <span class="text-blue-400">return</span> collection</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 11: Code QA Explained ==================== -->
+            <div id="section-11" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-purple-400 font-medium">Part 2: Understanding the Code</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Understanding code_qa.py</h2>
+                    <p class="text-gray-400">The main application that answers your coding questions.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-gray-700 mb-8">
+                    <h3 class="font-semibold text-lg mb-4">🔄 The RAG Pipeline</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center text-sm">
+                        <div class="bg-gray-800 p-4 rounded-xl">
+                            <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-2 text-xl">🔍</div>
+                            <p class="font-semibold text-blue-400">RETRIEVE</p>
+                            <p class="text-xs text-gray-400">Search ChromaDB</p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-xl">
+                            <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-2 text-xl">📝</div>
+                            <p class="font-semibold text-purple-400">AUGMENT</p>
+                            <p class="text-xs text-gray-400">Build prompt with examples</p>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-xl">
+                            <div class="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center mx-auto mb-2 text-xl">✨</div>
+                            <p class="font-semibold text-pink-400">GENERATE</p>
+                            <p class="text-xs text-gray-400">AI creates new code</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Search Function -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-blue-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-blue-400 font-medium">1. RETRIEVE: Search for Similar Snippets</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">search_snippets</span>(collection, query):
+    <span class="text-gray-500">"""Find code snippets similar to the query."""</span>
+    
+    <span class="text-gray-500"># ChromaDB auto-embeds the query and searches</span>
+    results = collection.<span class="text-yellow-400">query</span>(
+        query_texts=[query],  <span class="text-gray-500"># "I need a navbar"</span>
+        n_results=<span class="text-purple-400">3</span>,           <span class="text-gray-500"># Get top 3 matches</span>
+        include=[<span class="text-green-400">"documents"</span>, <span class="text-green-400">"distances"</span>]
+    )
+    
+    snippets = []
+    <span class="text-blue-400">for</span> i <span class="text-blue-400">in</span> <span class="text-yellow-400">range</span>(<span class="text-yellow-400">len</span>(results[<span class="text-green-400">'ids'</span>][<span class="text-purple-400">0</span>])):
+        distance = results[<span class="text-green-400">'distances'</span>][<span class="text-purple-400">0</span>][i]
+        similarity = <span class="text-purple-400">1</span> - distance  <span class="text-gray-500"># Convert to 0-1</span>
+        
+        <span class="text-blue-400">if</span> similarity >= <span class="text-purple-400">0.5</span>:  <span class="text-gray-500"># Only good matches</span>
+            snippets.<span class="text-yellow-400">append</span>({
+                <span class="text-green-400">'code'</span>: results[<span class="text-green-400">'documents'</span>][<span class="text-purple-400">0</span>][i],
+                <span class="text-green-400">'similarity'</span>: similarity
+            })
+    
+    <span class="text-blue-400">return</span> snippets</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Build Prompt -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-purple-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-purple-400 font-medium">2. AUGMENT: Build the RAG Prompt</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">build_rag_prompt</span>(query, snippets):
+    <span class="text-gray-500">"""Build prompt with retrieved examples."""</span>
+    
+    prompt = <span class="text-green-400">"""You are a code assistant.
+Use these examples as reference:
+
+"""</span>
+    
+    <span class="text-gray-500"># Add each retrieved snippet</span>
+    <span class="text-blue-400">for</span> i, snippet <span class="text-blue-400">in</span> <span class="text-yellow-400">enumerate</span>(snippets):
+        prompt += <span class="text-green-400">f"""
+--- Example </span>{i+<span class="text-purple-400">1</span>}<span class="text-green-400"> ---
+</span>{snippet[<span class="text-green-400">'code'</span>]}
+<span class="text-green-400">"""</span>
+    
+    <span class="text-gray-500"># Add the user's request</span>
+    prompt += <span class="text-green-400">f"""
+--- USER REQUEST ---
+</span>{query}<span class="text-green-400">
+
+Generate code following the patterns above.
+"""</span>
+    
+    <span class="text-blue-400">return</span> prompt</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Generate Code -->
+                    <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                        <div class="bg-pink-500/20 px-4 py-2 border-b border-gray-700">
+                            <span class="text-sm text-pink-400 font-medium">3. GENERATE: Create New Code</span>
+                        </div>
+                        <div class="p-4 code-block">
+                            <pre class="text-sm"><code><span class="text-blue-400">def</span> <span class="text-yellow-400">generate_code</span>(prompt):
+    <span class="text-gray-500">"""Send to Ollama and get generated code."""</span>
+    
+    response = ollama.<span class="text-yellow-400">chat</span>(
+        model=<span class="text-green-400">'codellama'</span>,
+        messages=[{
+            <span class="text-green-400">'role'</span>: <span class="text-green-400">'user'</span>,
+            <span class="text-green-400">'content'</span>: prompt
+        }]
+    )
+    
+    <span class="text-blue-400">return</span> response[<span class="text-green-400">'message'</span>][<span class="text-green-400">'content'</span>]
+
+
+<span class="text-gray-500"># Complete pipeline:</span>
+<span class="text-blue-400">def</span> <span class="text-yellow-400">answer_question</span>(collection, query):
+    snippets = <span class="text-yellow-400">search_snippets</span>(collection, query)  <span class="text-gray-500"># 1. RETRIEVE</span>
+    prompt = <span class="text-yellow-400">build_rag_prompt</span>(query, snippets)      <span class="text-gray-500"># 2. AUGMENT</span>
+    code = <span class="text-yellow-400">generate_code</span>(prompt)                   <span class="text-gray-500"># 3. GENERATE</span>
+    <span class="text-blue-400">return</span> code</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== SECTION 12: Setup & Running ==================== -->
+            <div id="section-12" class="section">
+                <div class="mb-8">
+                    <span class="text-sm text-green-400 font-medium">Part 3: Setup & Running</span>
+                    <h2 class="text-3xl font-bold mt-2 mb-4">Getting Started</h2>
+                    <p class="text-gray-400">Step-by-step installation and running the system.</p>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Step 1 -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-bold text-lg">1</div>
+                            <h3 class="font-semibold text-lg">Install Ollama</h3>
+                        </div>
+                        <div class="code-block p-4 rounded-lg">
+                            <code class="text-green-400">
+# Linux/macOS<br>
+curl -fsSL https://ollama.com/install.sh | sh<br><br>
+# Verify installation<br>
+ollama --version
+                            </code>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center font-bold text-lg">2</div>
+                            <h3 class="font-semibold text-lg">Start Ollama & Download Models</h3>
+                        </div>
+                        <div class="code-block p-4 rounded-lg">
+                            <code class="text-green-400">
+# Start the server (keep running!)<br>
+ollama serve<br><br>
+# In a NEW terminal, download models:<br>
+ollama pull nomic-embed-text<br>
+ollama pull codellama
+                            </code>
+                        </div>
+                        <p class="text-sm text-yellow-400 mt-3">⚠️ Keep the "ollama serve" terminal open!</p>
+                    </div>
+                    
+                    <!-- Step 3 -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center font-bold text-lg">3</div>
+                            <h3 class="font-semibold text-lg">Install Python Packages</h3>
+                        </div>
+                        <div class="code-block p-4 rounded-lg">
+                            <code class="text-green-400">
+pip install chromadb ollama
+                            </code>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4 -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center font-bold text-lg">4</div>
+                            <h3 class="font-semibold text-lg">Build Database & Run</h3>
+                        </div>
+                        <div class="code-block p-4 rounded-lg">
+                            <code class="text-green-400">
+# Build the database<br>
+python build_db.py<br><br>
+# Run the Q&A system<br>
+python code_qa.py
+                            </code>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Example Session -->
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden border border-gray-700 mt-8">
+                    <div class="bg-gray-900 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                        <span class="text-sm text-gray-400 ml-2">Example Session</span>
+                    </div>
+                    <div class="p-4 font-mono text-sm overflow-x-auto">
+                        <p class="text-gray-500">$ python code_qa.py</p>
+                        <p class="text-blue-400 mt-2">📚 Connected! 27 snippets available</p>
+                        <p class="text-gray-400 mt-4">🎯 Your question: <span class="text-white">Create a login form</span></p>
+                        <p class="text-green-400 mt-2">🔍 Searching...</p>
+                        <p class="text-purple-400">📚 Found 3 examples:</p>
+                        <p class="text-gray-400 ml-4">• tw_form_login (92%)</p>
+                        <p class="text-gray-400 ml-4">• tw_form_contact (78%)</p>
+                        <p class="text-pink-400 mt-2">🤖 Generating code...</p>
+                        <p class="text-gray-400 mt-4">═══════════════════════════════════</p>
+                        <p class="text-green-400">&lt;div class="min-h-screen flex items-center...</p>
+                        <p class="text-gray-400">═══════════════════════════════════</p>
+                    </div>
+                </div>
+                
+                <!-- Congratulations -->
+                <div class="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-2xl p-8 border border-green-500/30 mt-8 text-center">
+                    <div class="text-5xl mb-4">🎉</div>
+                    <h3 class="text-2xl font-bold mb-2">Congratulations!</h3>
+                    <p class="text-gray-400 mb-6">You've learned how to build a Code Q&A System with RAG!</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <span class="px-4 py-2 bg-gray-800 rounded-full text-sm">✅ Embeddings</span>
+                        <span class="px-4 py-2 bg-gray-800 rounded-full text-sm">✅ ChromaDB</span>
+                        <span class="px-4 py-2 bg-gray-800 rounded-full text-sm">✅ Ollama</span>
+                        <span class="px-4 py-2 bg-gray-800 rounded-full text-sm">✅ RAG</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Navigation Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur-sm border-t border-gray-700 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <button id="prevBtn" onclick="prevSection()" class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span>Previous</span>
+                </button>
+                
+                <div class="flex items-center gap-1">
+                    <!-- Section dots will be generated by JS -->
+                    <div id="sectionDots" class="flex gap-1"></div>
+                </div>
+                
+                <button id="nextBtn" onclick="nextSection()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg transition-colors">
+                    <span>Next</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration
+        const totalSections = 12;
+        let currentSection = 1;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('totalSections').textContent = totalSections;
+            generateDots();
+            updateUI();
+        });
+        
+        // Generate navigation dots
+        function generateDots() {
+            const dotsContainer = document.getElementById('sectionDots');
+            for (let i = 1; i <= totalSections; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'w-2 h-2 rounded-full transition-all duration-300';
+                dot.onclick = () => goToSection(i);
+                dotsContainer.appendChild(dot);
+            }
+        }
+        
+        // Navigate to next section
+        function nextSection() {
+            if (currentSection < totalSections) {
+                currentSection++;
+                updateUI();
+            }
+        }
+        
+        // Navigate to previous section
+        function prevSection() {
+            if (currentSection > 1) {
+                currentSection--;
+                updateUI();
+            }
+        }
+        
+        // Go to specific section
+        function goToSection(num) {
+            currentSection = num;
+            updateUI();
+        }
+        
+        // Update all UI elements
+        function updateUI() {
+            // Update sections visibility
+            document.querySelectorAll('.section').forEach((section, index) => {
+                section.classList.remove('active');
+                if (index + 1 === currentSection) {
+                    section.classList.add('active');
+                }
+            });
+            
+            // Update current section number
+            document.getElementById('currentSection').textContent = currentSection;
+            
+            // Update progress bar
+            const progress = (currentSection / totalSections) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentSection === 1;
+            document.getElementById('nextBtn').innerHTML = currentSection === totalSections 
+                ? '<span>Finish</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+                : '<span>Next</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
+            
+            // Update dots
+            document.querySelectorAll('#sectionDots button').forEach((dot, index) => {
+                if (index + 1 === currentSection) {
+                    dot.className = 'w-3 h-3 rounded-full bg-blue-500 transition-all duration-300';
+                } else if (index + 1 < currentSection) {
+                    dot.className = 'w-2 h-2 rounded-full bg-green-500 transition-all duration-300';
+                } else {
+                    dot.className = 'w-2 h-2 rounded-full bg-gray-600 transition-all duration-300';
+                }
+            });
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSection();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSection();
+            }
+        });
+    </script>
+</body>
+</html>
